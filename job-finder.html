@@ -5,9 +5,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="color-scheme" content="light">
-<title>Remote job finder — no experience or degree required</title>
-<meta name="description" content="Find remote junior developer jobs that match Thomas Gollogly's CV. Filters out roles requiring commercial experience or a degree. Free, works on mobile."/>
-<link rel="canonical" href="https://tgollogly.dev/job-finder.html"/>
+<meta name="robots" content="noindex, nofollow">
+<title>Remote job finder — private</title>
+<meta name="description" content="Private remote job search tool. Password required."/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -50,9 +50,9 @@
 </div></div>
 
 <div class="wrap head">
-  <span class="eyebrow">Tools &middot; remote only</span>
+  <span class="eyebrow">Private tool &middot; remote only</span>
   <h1>Remote job finder</h1>
-  <p>Finds <strong>remote</strong> junior developer jobs that match my CV and filters out listings asking for commercial experience or a degree. Free, runs in your browser — works on iPhone.</p>
+  <p>Private search for <strong>remote</strong> junior developer jobs that match my CV. Filters out listings asking for commercial experience or a degree. Password required — not linked from the public site.</p>
 
   <div class="panel">
     <div class="controls">
@@ -80,14 +80,14 @@
   <div class="jobs" id="jobs"></div>
 
   <div class="how panel">
-    <strong>Run this free on your iPhone</strong>
+    <strong>On your iPhone</strong>
     <ol>
       <li>Open Safari and go to <strong>tgollogly.dev/job-finder.html</strong></li>
+      <li>Enter the password when prompted (username can be anything — only the password is checked)</li>
       <li>Tap <strong>Search remote jobs</strong></li>
-      <li>Tap any <strong>View &amp; apply</strong> link to open the listing</li>
-      <li>Optional: tap Share → <strong>Add to Home Screen</strong> for one-tap access</li>
+      <li>Optional: Share → <strong>Add to Home Screen</strong> — Safari remembers the password</li>
     </ol>
-    <p style="margin:12px 0 0;">No sign-up, no API keys, no app install. Results come from live remote developer listings.</p>
+    <p style="margin:12px 0 0;">Set <code>JOB_FINDER_PASSWORD</code> in your Cloudflare Pages secrets if you have not already.</p>
   </div>
 </div>
 

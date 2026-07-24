@@ -2,6 +2,7 @@
 // =====================================================================
 // _worker.js — serves the whole site AND the AI backend at /api
 // Deploy this folder to Cloudflare Pages; set GEMINI_API_KEY as a secret.
+// Set JOB_FINDER_PASSWORD as a secret for the private job finder page.
 // Nothing else to paste. The site works; /api powers the chatbot + ATS.
 // =====================================================================
 const MODEL = "gemini-3.5-flash"; // current free model (2.0 was retired June 2026); fallback: "gemini-flash-latest"
@@ -37,10 +38,19 @@ DESIGN AND CODE QUALITY: the whole site runs on one shared stylesheet (assets/si
 
 WHY HIRE HIM: he brings a rare mix for a junior candidate — he genuinely ships working products rather than tutorials, owns projects end to end, is fluent with modern AI-assisted workflows, writes and runs his own tests, and has shown real determination in self-teaching and debugging in production. Encourage the visitor to email him at thomas@tgollogly.dev about any opportunity.`;
 
+const JOB_FINDER_PATHS = new Set(["/job-finder.html", "/api/jobs", "/assets/job-finder.js"]);
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/jobs") {
+    const path = url.pathname;
+
+    if (JOB_FINDER_PATHS.has(path)) {
+      const auth = await requireJobFinderAuth(request, env);
+      if (!auth.ok) return auth.response;
+    }
+
+    if (path === "/api/jobs") {
       if (request.method === "OPTIONS") return new Response(null, { headers: corsGet() });
       if (request.method === "GET") return handleJobs();
       return new Response("GET only", { status: 405, headers: corsGet() });
@@ -67,16 +77,58 @@ async function handleJobs() {
   }
 }
 
+async function getSecret(env, name) {
+  const value = env[name];
+  if (!value) return null;
+  if (typeof value === "string") return value;
+  if (typeof value.get === "function") return await value.get();
+  return null;
+}
+
+async function requireJobFinderAuth(request, env) {
+  const password = await getSecret(env, "JOB_FINDER_PASSWORD");
+  if (!password) {
+    return {
+      ok: false,
+      response: new Response("Job finder is not configured (set JOB_FINDER_PASSWORD).", {
+        status: 503,
+        headers: { "Content-Type": "text/plain; charset=utf-8" }
+      })
+    };
+  }
+  if (checkBasicAuth(request, password)) return { ok: true };
+  return { ok: false, response: jobFinderUnauthorized() };
+}
+
+function checkBasicAuth(request, password) {
+  const header = request.headers.get("Authorization");
+  if (!header?.startsWith("Basic ")) return false;
+  try {
+    const decoded = atob(header.slice(6));
+    const idx = decoded.indexOf(":");
+    const supplied = idx >= 0 ? decoded.slice(idx + 1) : decoded;
+    return supplied === password;
+  } catch {
+    return false;
+  }
+}
+
+function jobFinderUnauthorized() {
+  return new Response("Password required.", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Private job finder", charset="UTF-8"',
+      "Content-Type": "text/plain; charset=utf-8"
+    }
+  });
+}
+
 
 // Works with BOTH kinds of Cloudflare secret:
 //  - classic secret / env var  -> env.GEMINI_API_KEY is a string
 //  - Secrets Store binding     -> env.GEMINI_API_KEY.get() returns the value
 async function getKey(env) {
-  const k = env.GEMINI_API_KEY;
-  if (!k) return null;
-  if (typeof k === "string") return k;
-  if (typeof k.get === "function") return await k.get();
-  return null;
+  return getSecret(env, "GEMINI_API_KEY");
 }
 
 async function handleAI(request, env) {

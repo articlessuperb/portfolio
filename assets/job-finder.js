@@ -159,7 +159,10 @@ export function rankJobs(rawJobs, { minScore = 20, limit = 30, remoteOnly = true
 }
 
 export async function fetchRemoteJobs() {
-  const response = await fetch("/api/jobs", { headers: { Accept: "application/json" } });
+  const response = await fetch("/api/jobs", {
+    headers: { Accept: "application/json" },
+    credentials: "same-origin"
+  });
   if (!response.ok) throw new Error(`Job feed unavailable (${response.status})`);
   const payload = await response.json();
   if (!Array.isArray(payload)) throw new Error("Unexpected job feed format");

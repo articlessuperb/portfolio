@@ -7,8 +7,8 @@ Sources (remote-only by default):
   - RemoteOK public API (no key required)
   - Adzuna UK API only with --include-local (set ADZUNA_APP_ID and ADZUNA_APP_KEY)
 
-Run free on iPhone:
-  Open https://tgollogly.dev/job-finder.html in Safari, tap Search remote jobs.
+Run free on iPhone (password required after deploy):
+  Open https://tgollogly.dev/job-finder.html in Safari.
 
 Usage:
   python3 scripts/find-jobs.py
