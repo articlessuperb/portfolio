@@ -3,4 +3,5 @@ wrangler.toml
 .assetsignore
 README.md
 AI-SETUP.md
-
+scripts/
+.wrangler/
