@@ -2,7 +2,7 @@
 // =====================================================================
 // _worker.js — serves the whole site AND the AI backend at /api
 // Deploy this folder to Cloudflare Pages; set GEMINI_API_KEY as a secret.
-// Set JOB_FINDER_PASSWORD as a secret for the private job finder page.
+// Set JOB_FINDER_PASSWORD as a secret to lock the job finder page (optional for testing).
 // Nothing else to paste. The site works; /api powers the chatbot + ATS.
 // =====================================================================
 const MODEL = "gemini-3.5-flash"; // current free model (2.0 was retired June 2026); fallback: "gemini-flash-latest"
@@ -87,15 +87,7 @@ async function getSecret(env, name) {
 
 async function requireJobFinderAuth(request, env) {
   const password = await getSecret(env, "JOB_FINDER_PASSWORD");
-  if (!password) {
-    return {
-      ok: false,
-      response: new Response("Job finder is not configured (set JOB_FINDER_PASSWORD).", {
-        status: 503,
-        headers: { "Content-Type": "text/plain; charset=utf-8" }
-      })
-    };
-  }
+  if (!password) return { ok: true };
   if (checkBasicAuth(request, password)) return { ok: true };
   return { ok: false, response: jobFinderUnauthorized() };
 }

@@ -6,8 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="color-scheme" content="light">
 <meta name="robots" content="noindex, nofollow">
-<title>Remote job finder — private</title>
-<meta name="description" content="Private remote job search tool. Password required."/>
+<title>Remote job finder — testing</title>
+<meta name="description" content="Remote job search tool for testing. Add JOB_FINDER_PASSWORD in Cloudflare to lock it later."/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -50,9 +50,9 @@
 </div></div>
 
 <div class="wrap head">
-  <span class="eyebrow">Private tool &middot; remote only</span>
+  <span class="eyebrow">Testing &middot; remote only</span>
   <h1>Remote job finder</h1>
-  <p>Private search for <strong>remote</strong> junior developer jobs that match my CV. Filters out listings asking for commercial experience or a degree. Password required — not linked from the public site.</p>
+  <p>Search for <strong>remote</strong> junior developer jobs that match my CV. Filters out listings asking for commercial experience or a degree. Open for testing — add <code>JOB_FINDER_PASSWORD</code> in Cloudflare when you want to lock it.</p>
 
   <div class="panel">
     <div class="controls">
@@ -83,11 +83,11 @@
     <strong>On your iPhone</strong>
     <ol>
       <li>Open Safari and go to <strong>tgollogly.dev/job-finder.html</strong></li>
-      <li>Enter the password when prompted (username can be anything — only the password is checked)</li>
       <li>Tap <strong>Search remote jobs</strong></li>
-      <li>Optional: Share → <strong>Add to Home Screen</strong> — Safari remembers the password</li>
+      <li>Tap <strong>View &amp; apply</strong> on any match</li>
+      <li>Optional: Share → <strong>Add to Home Screen</strong></li>
     </ol>
-    <p style="margin:12px 0 0;">Set <code>JOB_FINDER_PASSWORD</code> in your Cloudflare Pages secrets if you have not already.</p>
+    <p style="margin:12px 0 0;">No password while testing. Set <code>JOB_FINDER_PASSWORD</code> in Cloudflare Pages secrets when you are ready to make it private.</p>
   </div>
 </div>
 
