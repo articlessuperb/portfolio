@@ -40,6 +40,11 @@ WHY HIRE HIM: he brings a rare mix for a junior candidate — he genuinely ships
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/jobs") {
+      if (request.method === "OPTIONS") return new Response(null, { headers: corsGet() });
+      if (request.method === "GET") return handleJobs();
+      return new Response("GET only", { status: 405, headers: corsGet() });
+    }
     if (url.pathname === "/api") {
       if (request.method === "OPTIONS") return new Response(null, { headers: cors() });
       if (request.method === "POST") return handleAI(request, env);
@@ -48,6 +53,19 @@ export default {
     return env.ASSETS.fetch(request); // everything else = your website files
   }
 };
+
+async function handleJobs() {
+  try {
+    const response = await fetch("https://remoteok.com/api?tags=dev", {
+      headers: { "User-Agent": "tgollogly-job-finder/1.0 (+https://tgollogly.dev)" }
+    });
+    if (!response.ok) return jsonGet({ error: "Remote job feed unavailable" }, response.status);
+    const data = await response.json();
+    return jsonGet(data);
+  } catch {
+    return jsonGet({ error: "Could not fetch remote jobs" }, 502);
+  }
+}
 
 
 // Works with BOTH kinds of Cloudflare secret:
@@ -177,4 +195,6 @@ async function gemini(prompt, key) {
 }
 
 function cors() { return { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" }; }
+function corsGet() { return { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, OPTIONS", "Access-Control-Allow-Headers": "Content-Type" }; }
 function json(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { ...cors(), "Content-Type": "application/json" } }); }
+function jsonGet(obj, status = 200) { return new Response(JSON.stringify(obj), { status, headers: { ...corsGet(), "Content-Type": "application/json", "Cache-Control": "public, max-age=300" } }); }

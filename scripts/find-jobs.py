@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-Find developer jobs that match Thomas Gollogly's CV and do not require
+Find remote developer jobs that match Thomas Gollogly's CV and do not require
 commercial experience or a computer science degree.
 
-Sources:
-  - Adzuna UK API (set ADZUNA_APP_ID and ADZUNA_APP_KEY — free at developer.adzuna.com)
-  - RemoteOK public API (no key required; remote roles only)
+Sources (remote-only by default):
+  - RemoteOK public API (no key required)
+  - Adzuna UK API only with --include-local (set ADZUNA_APP_ID and ADZUNA_APP_KEY)
+
+Run free on iPhone:
+  Open https://tgollogly.dev/job-finder.html in Safari, tap Search remote jobs.
 
 Usage:
   python3 scripts/find-jobs.py
-  python3 scripts/find-jobs.py --min-score 25 --max-days 14 --format json
-  ADZUNA_APP_ID=... ADZUNA_APP_KEY=... python3 scripts/find-jobs.py --save results.json
+  python3 scripts/find-jobs.py --min-score 25 --limit 20
+  python3 scripts/find-jobs.py --include-local   # also search UK on-site/hybrid via Adzuna
 """
 
 from __future__ import annotations
@@ -70,13 +73,26 @@ def is_developer_role(title: str, profile: dict[str, Any]) -> bool:
     return any(term in haystack for term in profile.get("developer_title_terms", []))
 
 
-def rejection_reason(text: str, title: str, profile: dict[str, Any]) -> str:
+def is_remote_job(job: JobListing, profile: dict[str, Any]) -> bool:
+    if job.source == "RemoteOK":
+        return True
+    remote_terms = profile.get(
+        "remote_terms",
+        ["remote", "work from home", "wfh", "anywhere", "distributed", "worldwide"],
+    )
+    blob = f" {normalise(' '.join([job.title, job.description, job.location]))} "
+    return any(term in blob for term in remote_terms) or "remote" in normalise(job.location)
+
+
+def rejection_reason(text: str, title: str, profile: dict[str, Any], remote_only: bool, job: JobListing) -> str:
     haystack = f" {normalise(text)} "
     for term in profile.get("exclude_terms", []):
         if term.lower() in haystack:
             return f"excluded: contains '{term.strip()}'"
     if not is_developer_role(title, profile):
         return "excluded: title is not a developer/engineer role"
+    if remote_only and not is_remote_job(job, profile):
+        return "excluded: not a remote role"
     years = re.search(r"(\d+)\+?\s*years?(?:\s+of)?\s+(?:commercial\s+)?experience", haystack)
     if years and int(years.group(1)) >= 2:
         return f"excluded: asks for {years.group(1)}+ years experience"
@@ -121,9 +137,9 @@ def skill_matches(text: str, profile: dict[str, Any]) -> list[str]:
     return unique
 
 
-def score_job(job: JobListing, profile: dict[str, Any]) -> JobListing:
+def score_job(job: JobListing, profile: dict[str, Any], remote_only: bool = True) -> JobListing:
     blob = " ".join([job.title, job.description, job.location])
-    reason = rejection_reason(blob, job.title, profile)
+    reason = rejection_reason(blob, job.title, profile, remote_only, job)
     if reason:
         job.rejection_reason = reason
         job.match_score = 0.0
@@ -137,9 +153,9 @@ def score_job(job: JobListing, profile: dict[str, Any]) -> JobListing:
     score += min(len(signals) * 5, 25)
     if any(word in title for word in ("junior", "trainee", "apprentice", "graduate", "entry level", "entry-level")):
         score += 12
-    if "remote" in normalise(job.location) or "remote" in normalise(job.description):
-        score += 4
-    if any(loc.lower() in normalise(job.location) for loc in profile.get("search_locations", [])[:5]):
+    if is_remote_job(job, profile):
+        score += 6
+    if not remote_only and any(loc.lower() in normalise(job.location) for loc in profile.get("search_locations", [])[:5]):
         score += 6
 
     job.matched_skills = skills
@@ -262,7 +278,7 @@ def print_table(jobs: list[JobListing]) -> None:
         print("No matching jobs found. Try widening --max-days or adding Adzuna API keys.")
         return
 
-    print(f"\nFound {len(jobs)} matching jobs (no experience/degree required):\n")
+    print(f"\nFound {len(jobs)} matching remote jobs (no experience/degree required):\n")
     for index, job in enumerate(jobs, start=1):
         skills = ", ".join(job.matched_skills[:8]) or "—"
         signals = ", ".join(job.friendly_signals[:4]) or "—"
@@ -318,6 +334,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--format", choices=("table", "json", "csv"), default="table", help="Output format")
     parser.add_argument("--save", type=Path, help="Optional file path to save results (.json or .csv)")
     parser.add_argument("--include-rejected", action="store_true", help="Show filtered-out jobs for debugging")
+    parser.add_argument(
+        "--include-local",
+        action="store_true",
+        help="Also search UK on-site/hybrid jobs via Adzuna (remote-only is the default)",
+    )
     return parser.parse_args()
 
 
@@ -325,8 +346,15 @@ def main() -> int:
     args = parse_args()
     profile = load_profile(args.profile)
 
-    raw_jobs = dedupe_jobs(adzuna_jobs(profile, args.max_days, args.per_query) + remoteok_jobs(profile))
-    scored = [score_job(job, profile) for job in raw_jobs]
+    remote_only = not args.include_local
+    sources: list[JobListing] = [remoteok_jobs(profile)]
+    if args.include_local:
+        sources.append(adzuna_jobs(profile, args.max_days, args.per_query))
+    else:
+        print("Remote-only mode (use --include-local to add UK on-site/hybrid via Adzuna).", file=sys.stderr)
+
+    raw_jobs = dedupe_jobs([job for source in sources for job in source])
+    scored = [score_job(job, profile, remote_only=remote_only) for job in raw_jobs]
 
     if args.include_rejected:
         visible = sorted(scored, key=lambda job: job.match_score, reverse=True)
